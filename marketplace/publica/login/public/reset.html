@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ตั้งรหัสผ่านใหม่</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main class="card">
+  <h1>ตั้งรหัสผ่านใหม่</h1>
+  <p class="sub">กรอกรหัสผ่านใหม่ที่ต้องการใช้</p>
+  <div id="alert" class="alert" role="alert"></div>
+  <form id="f">
+    <div class="field"><label for="pw">รหัสผ่านใหม่ (อย่างน้อย 8 ตัว)</label><input id="pw" type="password" autocomplete="new-password" required></div>
+    <div class="field"><label for="pw2">ยืนยันรหัสผ่านใหม่</label><input id="pw2" type="password" autocomplete="new-password" required></div>
+    <button class="btn" type="submit">บันทึกรหัสผ่านใหม่</button>
+    <p class="foot"><a href="/">กลับไปหน้าเข้าสู่ระบบ</a></p>
+  </form>
+</main>
+<script>
+const box = document.getElementById('alert');
+const token = new URLSearchParams(location.search).get('token') || '';
+function say(m, ok){ box.textContent = m; box.className = 'alert show ' + (ok ? 'good' : 'bad'); }
+if (!token) say('ลิงก์ไม่ถูกต้อง', false);
+document.getElementById('f').addEventListener('submit', async e => {
+  e.preventDefault();
+  const pw = document.getElementById('pw').value;
+  if (pw !== document.getElementById('pw2').value) return say('รหัสผ่านทั้งสองช่องไม่ตรงกัน', false);
+  const r = await fetch('/api/reset', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, password: pw })
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) return say(j.error || 'เกิดข้อผิดพลาด', false);
+  say('เปลี่ยนรหัสผ่านสำเร็จ กำลังพาไปหน้าเข้าสู่ระบบ…', true);
+  setTimeout(() => location.href = '/', 1500);
+});
+</script>
+</body>
+</html>

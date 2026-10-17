@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>หน้าหลัก</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main class="card">
+  <h1 id="hello">กำลังโหลด…</h1>
+  <p class="sub" id="who"></p>
+  <button class="btn" id="out">ออกจากระบบ</button>
+</main>
+<script>
+fetch('/api/me').then(r => {
+  if (!r.ok) { location.href = '/'; return; }
+  return r.json();
+}).then(u => {
+  if (!u) return;
+  document.getElementById('hello').textContent = 'สวัสดี ' + u.name;
+  document.getElementById('who').textContent = u.email;
+});
+document.getElementById('out').onclick = async () => {
+  await fetch('/api/logout', { method: 'POST' });
+  location.href = '/';
+};
+</script>
+</body>
+</html>

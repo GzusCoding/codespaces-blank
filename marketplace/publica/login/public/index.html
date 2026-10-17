@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>เข้าสู่ระบบ</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main class="card">
+  <h1 id="title">เข้าสู่ระบบ</h1>
+  <p class="sub" id="sub">ซื้อ ขาย และแลกเปลี่ยนสินค้าได้ในที่เดียว</p>
+  <div id="alert" class="alert" role="alert"></div>
+
+  <form id="login">
+    <div class="field"><label for="l-email">อีเมล</label><input id="l-email" name="email" type="email" autocomplete="email" required></div>
+    <div class="field"><label for="l-pw">รหัสผ่าน</label><input id="l-pw" name="password" type="password" autocomplete="current-password" required></div>
+    <div class="row">
+      <label class="check"><input type="checkbox" name="remember"> จดจำฉันไว้</label>
+      <button type="button" class="link" data-go="forgot">ลืมรหัสผ่าน?</button>
+    </div>
+    <button class="btn" type="submit">เข้าสู่ระบบ</button>
+    <p class="foot">ยังไม่มีบัญชี? <button type="button" class="link" data-go="register">สมัครสมาชิก</button></p>
+  </form>
+
+  <form id="register" hidden>
+    <div class="field"><label for="r-name">ชื่อที่แสดง</label><input id="r-name" name="name" type="text" maxlength="60" autocomplete="name" required></div>
+    <div class="field"><label for="r-email">อีเมล</label><input id="r-email" name="email" type="email" autocomplete="email" required></div>
+    <div class="field"><label for="r-pw">รหัสผ่าน (อย่างน้อย 8 ตัว)</label><input id="r-pw" name="password" type="password" autocomplete="new-password" required></div>
+    <div class="field"><label for="r-pw2">ยืนยันรหัสผ่าน</label><input id="r-pw2" name="password2" type="password" autocomplete="new-password" required></div>
+    <button class="btn" type="submit">สมัครสมาชิก</button>
+    <p class="foot">มีบัญชีแล้ว? <button type="button" class="link" data-go="login">เข้าสู่ระบบ</button></p>
+  </form>
+
+  <form id="forgot" hidden>
+    <div class="field"><label for="f-email">อีเมลที่ใช้สมัคร</label><input id="f-email" name="email" type="email" autocomplete="email" required></div>
+    <button class="btn" type="submit">ขอลิงก์รีเซ็ตรหัสผ่าน</button>
+    <p class="foot"><button type="button" class="link" data-go="login">กลับไปหน้าเข้าสู่ระบบ</button></p>
+  </form>
+</main>
+
+<script>
+const titles = {
+  login: ['เข้าสู่ระบบ', 'ซื้อ ขาย และแลกเปลี่ยนสินค้าได้ในที่เดียว'],
+  register: ['สมัครสมาชิก', 'สร้างบัญชีใหม่เพื่อเริ่มใช้งาน'],
+  forgot: ['ลืมรหัสผ่าน', 'กรอกอีเมล แล้วเราจะสร้างลิงก์ตั้งรหัสผ่านใหม่ให้']
+};
+const alertBox = document.getElementById('alert');
+
+function say(msg, ok) {
+  alertBox.textContent = msg;
+  alertBox.className = 'alert show ' + (ok ? 'good' : 'bad');
+}
+function show(view) {
+  document.querySelectorAll('form').forEach(f => f.hidden = f.id !== view);
+  document.getElementById('title').textContent = titles[view][0];
+  document.getElementById('sub').textContent = titles[view][1];
+  alertBox.className = 'alert';
+}
+document.querySelectorAll('[data-go]').forEach(b => b.onclick = () => show(b.dataset.go));
+
+async function post(url, data) {
+  const r = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || 'เกิดข้อผิดพลาด ลองใหม่อีกครั้ง');
+  return j;
+}
+
+function handle(id, fn) {
+  const form = document.getElementById(id);
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const btn = form.querySelector('.btn');
+    const data = Object.fromEntries(new FormData(form));
+    data.remember = form.elements.remember ? form.elements.remember.checked : false;
+    btn.disabled = true;
+    try { await fn(data, form); }
+    catch (err) { say(err.message, false); }
+    btn.disabled = false;
+  });
+}
+
+handle('login', async d => {
+  await post('/api/login', d);
+  location.href = '/home.html';
+});
+handle('register', async d => {
+  if (d.password !== d.password2) throw new Error('รหัสผ่านทั้งสองช่องไม่ตรงกัน');
+  await post('/api/register', d);
+  location.href = '/home.html';
+});
+handle('forgot', async (d, form) => {
+  await post('/api/forgot', d);
+  say('ถ้าอีเมลนี้มีในระบบ เราได้สร้างลิงก์รีเซ็ตรหัสผ่านแล้ว (ช่วงพัฒนา: ดูลิงก์ในเทอร์มินัลของเซิร์ฟเวอร์)', true);
+  form.reset();
+});
+
+fetch('/api/me').then(r => { if (r.ok) location.href = '/home.html'; });
+</script>
+</body>
+</html>
